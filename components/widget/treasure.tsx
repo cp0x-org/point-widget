@@ -56,15 +56,9 @@ export default function Treasure() {
     waitForSync: true,
   });
 
-  console.log();
-
-  const chains = data?.chains ? (Object.values(data.chains) as ChainSummary[]) : [];
-
-  const [customAssets, setCustomAssets] = useState<
-    { id: number; name: string; value: number; totalValue: number; price: number }[]
-  >([]);
+  const [customAssets, setCustomAssets] = useState<{ id: number; name: string; quantity: number; price: number }[]>([]);
   const [customAssetName, setCustomAssetName] = useState('');
-  const [customAssetValue, setCustomAssetValue] = useState('');
+  const [customAssetQuantity, setCustomAssetQuantity] = useState('');
   const [customAssetPrice, setCustomAssetPrice] = useState('');
 
   useEffect(() => {
@@ -73,16 +67,16 @@ export default function Treasure() {
       if (savedCustomAssets) {
         setCustomAssets(JSON.parse(savedCustomAssets));
       }
-    } catch (error) {
-      console.error('Failed to load custom assets from localStorage', error);
+    } catch (e) {
+      console.error('Failed to load custom assets from localStorage', e);
     }
   }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem('customAssets', JSON.stringify(customAssets));
-    } catch (error) {
-      console.error('Failed to save custom assets to localStorage', error);
+    } catch (e) {
+      console.error('Failed to save custom assets to localStorage', e);
     }
   }, [customAssets]);
 
@@ -98,24 +92,19 @@ export default function Treasure() {
   }, [data]);
 
   const assetsPieData = useMemo(() => {
-    const customAssetsForPie = customAssets.map(({ name, totalValue }) => ({ name, value: totalValue }));
+    const customAssetsForPie = customAssets.map(({ name, quantity, price }) => ({ name, value: quantity * price }));
     return [...apiAssets, ...customAssetsForPie];
   }, [apiAssets, customAssets]);
 
   const handleAddAsset = () => {
-    if (customAssetName && customAssetValue) {
-      const newValue = parseFloat(customAssetValue) * parseFloat(customAssetPrice);
-      if (!isNaN(newValue)) {
-        const newAsset = {
-          id: Date.now(),
-          name: customAssetName,
-          value: parseFloat(customAssetValue),
-          price: parseFloat(customAssetPrice),
-          totalValue: newValue,
-        };
+    if (customAssetName && customAssetQuantity && customAssetPrice) {
+      const quantity = parseFloat(customAssetQuantity);
+      const price = parseFloat(customAssetPrice);
+      if (!isNaN(quantity) && !isNaN(price)) {
+        const newAsset = { id: Date.now(), name: customAssetName, quantity, price };
         setCustomAssets((prev) => [...prev, newAsset]);
         setCustomAssetName('');
-        setCustomAssetValue('');
+        setCustomAssetQuantity('');
         setCustomAssetPrice('');
       }
     }
@@ -144,12 +133,6 @@ export default function Treasure() {
         <p className="text-xs text-gray-500 mt-1">{data?.address}</p>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-gray-800">Assets by Protocol</h3>
-        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
-          <AssetsPie data={assetsPieData} />
-        </div>
-      </div>
       <div className="space-y-3 bg-white border border-gray-200 rounded-lg p-4">
         <h3 className="text-lg font-semibold text-gray-800">Add Custom Asset</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -167,16 +150,16 @@ export default function Treasure() {
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="assetValue" className="text-sm font-medium text-gray-700">
-              Custom Asset Value
+            <label htmlFor="assetQuantity" className="text-sm font-medium text-gray-700">
+              Custom Asset Quantity
             </label>
             <input
               type="number"
-              id="assetValue"
-              value={customAssetValue}
-              onChange={(e) => setCustomAssetValue(e.target.value)}
+              id="assetQuantity"
+              value={customAssetQuantity}
+              onChange={(e) => setCustomAssetQuantity(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. 1000"
+              placeholder="e.g. 10"
             />
           </div>
           <div className="space-y-1">
@@ -189,7 +172,7 @@ export default function Treasure() {
               value={customAssetPrice}
               onChange={(e) => setCustomAssetPrice(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. 50"
+              placeholder="e.g. 50.25"
             />
           </div>
           <button
@@ -200,71 +183,50 @@ export default function Treasure() {
           </button>
         </div>
       </div>
+
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-gray-800">Assets by Protocol</h3>
+        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+          <AssetsPie data={assetsPieData} />
+        </div>
+      </div>
+
       {customAssets.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-gray-800">My Custom Assets</h3>
-          <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
-            {customAssets.map((asset) => (
-              <div key={asset.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50">
-                <div>
-                  <span className="font-medium text-gray-800">{asset.name}</span>:
-                  <span className="ml-2 text-gray-600">${asset.value.toFixed(2)}</span>
-                  <span className="ml-2 text-gray-600">${asset.price}</span>
-                  <span className="ml-2 text-gray-600">${asset.totalValue.toFixed(2)}</span>
-                </div>
-                <button
-                  onClick={() => handleDeleteAsset(asset.id)}
-                  className="text-red-500 hover:text-red-700 font-semibold"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-2 font-semibold text-gray-600">Name</th>
+                  <th className="p-2 font-semibold text-gray-600">Quantity</th>
+                  <th className="p-2 font-semibold text-gray-600">Price</th>
+                  <th className="p-2 font-semibold text-gray-600">Total Value</th>
+                  <th className="p-2 font-semibold text-gray-600 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customAssets.map((asset) => (
+                  <tr key={asset.id} className="border-b hover:bg-gray-50">
+                    <td className="p-2 font-medium text-gray-800">{asset.name}</td>
+                    <td className="p-2 text-gray-600">{asset.quantity}</td>
+                    <td className="p-2 text-gray-600">${asset.price.toFixed(2)}</td>
+                    <td className="p-2 text-gray-600">${(asset.quantity * asset.price).toFixed(2)}</td>
+                    <td className="p-2 text-right">
+                      <button
+                        onClick={() => handleDeleteAsset(asset.id)}
+                        className="text-red-500 hover:text-red-700 font-semibold"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
-
-      {/*<div className="space-y-3">*/}
-      {/*  <h3 className="text-lg font-semibold text-gray-800">Chains</h3>*/}
-      {/*  {chains.map((chain) => (*/}
-      {/*    <div*/}
-      {/*      key={chain.chainId}*/}
-      {/*      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"*/}
-      {/*    >*/}
-      {/*      <div className="flex items-center gap-4">*/}
-      {/*        <div className="relative w-12 h-12 flex-shrink-0">*/}
-      {/*          <Image src={chain.imgLarge} alt={chain.name} width={48} height={48} className="rounded-full" />*/}
-      {/*        </div>*/}
-
-      {/*        <div className="flex-grow">*/}
-      {/*          <div className="flex items-center justify-between mb-2">*/}
-      {/*            <h4 className="text-lg font-semibold text-gray-900">{chain.name}</h4>*/}
-      {/*            <span className="text-lg font-bold text-blue-600">${parseFloat(chain.value).toFixed(2)}</span>*/}
-      {/*          </div>*/}
-
-      {/*          <div className="grid grid-cols-2 gap-2 text-sm">*/}
-      {/*            <div>*/}
-      {/*              <span className="text-gray-500">Chain ID:</span>*/}
-      {/*              <span className="ml-2 text-gray-700">{chain.chainId}</span>*/}
-      {/*            </div>*/}
-      {/*            <div>*/}
-      {/*              <span className="text-gray-500">Percentile:</span>*/}
-      {/*              <span className="ml-2 text-gray-700">{parseFloat(chain.valuePercentile).toFixed(2)}%</span>*/}
-      {/*            </div>*/}
-      {/*            <div>*/}
-      {/*              <span className="text-gray-500">Cost Basis:</span>*/}
-      {/*              <span className="ml-2 text-gray-700">{chain.totalCostBasis}</span>*/}
-      {/*            </div>*/}
-      {/*            <div>*/}
-      {/*              <span className="text-gray-500">Value:</span>*/}
-      {/*              <span className="ml-2 text-gray-700">{chain.value}</span>*/}
-      {/*            </div>*/}
-      {/*          </div>*/}
-      {/*        </div>*/}
-      {/*      </div>*/}
-      {/*    </div>*/}
-      {/*  ))}*/}
-      {/*</div>*/}
     </div>
   );
 }
