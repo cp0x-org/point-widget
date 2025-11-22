@@ -60,6 +60,8 @@ interface Project {
   name: string;
   fdv: number;
   percent: number;
+  totalPoints: number;
+  pointPrice: number;
 }
 
 export default function Treasure() {
@@ -75,6 +77,7 @@ export default function Treasure() {
   const [projectName, setProjectName] = useState('');
   const [projectFDV, setProjectFDV] = useState('');
   const [tokenPercent, setTokenPercent] = useState('');
+  const [totalPoints, setTotalPoints] = useState('');
 
   useEffect(() => {
     try {
@@ -116,11 +119,21 @@ export default function Treasure() {
   }, [apiAssets, customAssets]);
 
   const handleAddProjectData = () => {
-    if (projectName && projectFDV && tokenPercent) {
+    if (projectName && projectFDV && tokenPercent && totalPoints) {
       const fdv = parseFloat(projectFDV);
       const percent = parseFloat(tokenPercent);
-      if (!isNaN(fdv) && !isNaN(percent)) {
-        const newProject: Project = { id: Date.now(), name: projectName, fdv: fdv, percent: percent };
+      const points = parseFloat(totalPoints);
+      if (!isNaN(fdv) && !isNaN(percent) && !isNaN(points)) {
+        // const price = fdv / (1 + percent / 100);
+        const price = fdv / points;
+        const newProject: Project = {
+          id: Date.now(),
+          name: projectName,
+          fdv: fdv,
+          percent: percent,
+          totalPoints: points,
+          pointPrice: price,
+        };
         setProjects((prev) => ({
           ...prev,
           [newProject.name]: newProject,
@@ -134,6 +147,18 @@ export default function Treasure() {
 
   const handleDeleteAsset = (id: number) => {
     setCustomAssets((prev) => prev.filter((asset) => asset.id !== id));
+  };
+
+  const handleDeleteProject = (id: number) => {
+    setProjects((prev) => {
+      const updated = { ...prev };
+      for (const key in updated) {
+        if (updated[key].id === id) {
+          delete updated[key];
+        }
+      }
+      return updated;
+    });
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -174,12 +199,12 @@ export default function Treasure() {
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. My Savings"
+              placeholder="e.g. Backpack"
             />
           </div>
           <div className="space-y-1">
             <label htmlFor="projectFDV" className="text-sm font-medium text-gray-700">
-              Project Apr. FDV
+              Project Apr. FDV ($)
             </label>
             <input
               type="number"
@@ -203,6 +228,19 @@ export default function Treasure() {
               placeholder="e.g. 50.25"
             />
           </div>
+          <div className="space-y-1">
+            <label htmlFor="totalPoints" className="text-sm font-medium text-gray-700">
+              Total Points
+            </label>
+            <input
+              type="number"
+              id="totalPoints"
+              value={totalPoints}
+              onChange={(e) => setTotalPoints(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="e.g. 50.25"
+            />
+          </div>
           <button
             onClick={handleAddProjectData}
             className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition-colors md:mt-6"
@@ -211,6 +249,46 @@ export default function Treasure() {
           </button>
         </div>
       </div>
+
+      {Object.values(projects).length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-gray-800">My Project Configuration</h3>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-2 font-semibold text-gray-600">Name</th>
+                  <th className="p-2 font-semibold text-gray-600">FDV</th>
+                  <th className="p-2 font-semibold text-gray-600">%, tokens</th>
+                  <th className="p-2 font-semibold text-gray-600">Total Points</th>
+                  <th className="p-2 font-semibold text-gray-600">Point Price</th>
+                  <th className="p-2 font-semibold text-gray-600 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.values(projects).map((pr) => (
+                  <tr key={pr.id} className="border-b hover:bg-gray-50">
+                    <td className="p-2 font-medium text-gray-800">{pr.name}</td>
+                    <td className="p-2 text-gray-600">${pr.fdv}</td>
+                    <td className="p-2 text-gray-600">${pr.percent}</td>
+                    <td className="p-2 text-gray-600">${pr.totalPoints}</td>
+                    <td className="p-2 text-gray-600">${pr.pointPrice}</td>
+                    <td className="p-2 text-right">
+                      <button
+                        onClick={() => handleDeleteProject(pr.id)}
+                        className="text-red-500 hover:text-red-700 font-semibold"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {customAssets.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-gray-800">My Custom Assets</h3>
