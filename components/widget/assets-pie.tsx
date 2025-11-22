@@ -36,7 +36,7 @@ export default function AssetsPie({ data }: AssetsPieProps) {
           ))}
         </Pie>
         <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
-        <Legend />
+        <Legend layout="vertical" align="right" verticalAlign="middle" />
       </PieChart>
     </ResponsiveContainer>
   );
