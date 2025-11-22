@@ -35,6 +35,13 @@ interface AssetByProtocol {
   totalOpenPnl: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  fdv: number;
+  percent: number;
+}
+
 interface Chain {
   name: string;
   key: string;
@@ -48,6 +55,13 @@ interface Chain {
   totalOpenPnl: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  fdv: number;
+  percent: number;
+}
+
 export default function Treasure() {
   const { data, isLoading, error } = useGetPortfolio({
     address: '0x4c82cfF7398f3D43b36e41B10fF6F42b14DD9385',
@@ -57,15 +71,20 @@ export default function Treasure() {
   });
 
   const [customAssets, setCustomAssets] = useState<{ id: number; name: string; quantity: number; price: number }[]>([]);
-  const [customAssetName, setCustomAssetName] = useState('');
-  const [customAssetQuantity, setCustomAssetQuantity] = useState('');
-  const [customAssetPrice, setCustomAssetPrice] = useState('');
+  const [projects, setProjects] = useState<Record<string, Project>>({});
+  const [projectName, setProjectName] = useState('');
+  const [projectFDV, setProjectFDV] = useState('');
+  const [tokenPercent, setTokenPercent] = useState('');
 
   useEffect(() => {
     try {
       const savedCustomAssets = localStorage.getItem('customAssets');
       if (savedCustomAssets) {
         setCustomAssets(JSON.parse(savedCustomAssets));
+      }
+      const projects = localStorage.getItem('projects');
+      if (projects) {
+        setProjects(JSON.parse(projects));
       }
     } catch (e) {
       console.error('Failed to load custom assets from localStorage', e);
@@ -96,16 +115,19 @@ export default function Treasure() {
     return [...apiAssets, ...customAssetsForPie];
   }, [apiAssets, customAssets]);
 
-  const handleAddAsset = () => {
-    if (customAssetName && customAssetQuantity && customAssetPrice) {
-      const quantity = parseFloat(customAssetQuantity);
-      const price = parseFloat(customAssetPrice);
-      if (!isNaN(quantity) && !isNaN(price)) {
-        const newAsset = { id: Date.now(), name: customAssetName, quantity, price };
-        setCustomAssets((prev) => [...prev, newAsset]);
-        setCustomAssetName('');
-        setCustomAssetQuantity('');
-        setCustomAssetPrice('');
+  const handleAddProjectData = () => {
+    if (projectName && projectFDV && tokenPercent) {
+      const fdv = parseFloat(projectFDV);
+      const percent = parseFloat(tokenPercent);
+      if (!isNaN(fdv) && !isNaN(percent)) {
+        const newProject: Project = { id: Date.now(), name: projectName, fdv: fdv, percent: percent };
+        setProjects((prev) => ({
+          ...prev,
+          [newProject.name]: newProject,
+        }));
+        setProjectName('');
+        setProjectFDV('');
+        setTokenPercent('');
       }
     }
   };
@@ -133,64 +155,62 @@ export default function Treasure() {
         <p className="text-xs text-gray-500 mt-1">{data?.address}</p>
       </div>
 
-      <div className="space-y-3 bg-white border border-gray-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-gray-800">Add Custom Asset</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div className="space-y-1">
-            <label htmlFor="assetName" className="text-sm font-medium text-gray-700">
-              Custom Asset Name
-            </label>
-            <input
-              type="text"
-              id="assetName"
-              value={customAssetName}
-              onChange={(e) => setCustomAssetName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. My Savings"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="assetQuantity" className="text-sm font-medium text-gray-700">
-              Custom Asset Quantity
-            </label>
-            <input
-              type="number"
-              id="assetQuantity"
-              value={customAssetQuantity}
-              onChange={(e) => setCustomAssetQuantity(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. 10"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="assetPrice" className="text-sm font-medium text-gray-700">
-              Custom Asset Price
-            </label>
-            <input
-              type="number"
-              id="assetPrice"
-              value={customAssetPrice}
-              onChange={(e) => setCustomAssetPrice(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. 50.25"
-            />
-          </div>
-          <button
-            onClick={handleAddAsset}
-            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition-colors md:mt-6"
-          >
-            Add to Pie Chart
-          </button>
-        </div>
-      </div>
-
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-gray-800">Assets by Protocol</h3>
         <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
           <AssetsPie data={assetsPieData} />
         </div>
       </div>
-
+      <div className="space-y-3 bg-white border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold text-gray-800">Project Configuration</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="space-y-1">
+            <label htmlFor="projectName" className="text-sm font-medium text-gray-700">
+              Project Name
+            </label>
+            <input
+              type="text"
+              id="projectName"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="e.g. My Savings"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="projectFDV" className="text-sm font-medium text-gray-700">
+              Project Apr. FDV
+            </label>
+            <input
+              type="number"
+              id="projectFDV"
+              value={projectFDV}
+              onChange={(e) => setProjectFDV(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="e.g. 10"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="tokenPercent" className="text-sm font-medium text-gray-700">
+              Project Token Percent
+            </label>
+            <input
+              type="number"
+              id="tokenPercent"
+              value={tokenPercent}
+              onChange={(e) => setTokenPercent(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="e.g. 50.25"
+            />
+          </div>
+          <button
+            onClick={handleAddProjectData}
+            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition-colors md:mt-6"
+          >
+            Add Project Data
+          </button>
+        </div>
+      </div>
       {customAssets.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-gray-800">My Custom Assets</h3>
