@@ -160,11 +160,22 @@ export default function Treasure() {
   const handleDeleteProject = (id: number) => {
     setProjects((prev) => {
       const updated = { ...prev };
+      let projectName = '';
+
+      // Find project name before deleting
       for (const key in updated) {
         if (updated[key].id === id) {
+          projectName = updated[key].name;
           delete updated[key];
+          break;
         }
       }
+
+      // Remove related custom assets by project name
+      if (projectName) {
+        setCustomAssets((prevAssets) => prevAssets.filter((asset) => asset.name !== projectName));
+      }
+
       return updated;
     });
   };
@@ -182,12 +193,6 @@ export default function Treasure() {
 
   return (
     <div className="h-screen overflow-y-auto p-6 space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md">
-        <p className="text-sm text-gray-600 mb-1">Net Worth</p>
-        <p className="text-3xl font-bold text-gray-900">${data?.networth}</p>
-        <p className="text-xs text-gray-500 mt-1">{data?.address}</p>
-      </div>
-
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-gray-800">Assets by Protocol</h3>
         <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
@@ -196,7 +201,7 @@ export default function Treasure() {
       </div>
       <div className="space-y-3 bg-white border border-gray-200 rounded-lg p-4">
         <h3 className="text-lg font-semibold text-gray-800">Project Configuration</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div className="space-y-1">
             <label htmlFor="projectName" className="text-sm font-medium text-gray-700">
               Project Name
