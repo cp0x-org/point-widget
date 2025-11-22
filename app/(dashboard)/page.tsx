@@ -9,7 +9,6 @@ export const metadata = generateMetadata({
 export default function Page() {
   return (
     <div className="flex flex-col gap-4">
-      <p className="py-4 mt-2 md:mt-0">Hello world</p>
       <Treasure />
     </div>
   );
