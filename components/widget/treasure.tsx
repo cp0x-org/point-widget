@@ -101,9 +101,8 @@ export default function Treasure() {
 
       Object.values(projects).forEach((project) => {
         // Find matching userPoint by name
-        const matchingUserPoint = userPoints.find((point: any) => point.name === project.name);
-        console.log(matchingUserPoint);
-        console.log(project.name);
+        const matchingUserPoint = userPoints.find((point: any) => point.name.trim() === project.name.trim());
+
         if (matchingUserPoint) {
           // Check if this asset is not already in customAssets
           const existingAsset = newCustomAssets.find((asset) => asset.name === project.name);
@@ -150,8 +149,7 @@ export default function Treasure() {
       const percent = parseFloat(tokenPercent);
       const points = parseFloat(totalPoints);
       if (!isNaN(fdv) && !isNaN(percent) && !isNaN(points)) {
-        // const price = fdv / (1 + percent / 100);
-        const price = fdv / points;
+        const price = (fdv * (percent / 100)) / points;
         const newProject: Project = {
           id: Date.now(),
           name: projectName,
@@ -167,12 +165,9 @@ export default function Treasure() {
         setProjectName('');
         setProjectFDV('');
         setTokenPercent('');
+        setTotalPoints('');
       }
     }
-  };
-
-  const handleDeleteAsset = (id: number) => {
-    setCustomAssets((prev) => prev.filter((asset) => asset.id !== id));
   };
 
   const handleDeleteProject = (id: number) => {
