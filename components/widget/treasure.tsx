@@ -74,6 +74,14 @@ export default function Treasure() {
     }
   }, [customAssets]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('projects', JSON.stringify(projects));
+    } catch (e) {
+      console.error('Failed to save projects to localStorage', e);
+    }
+  }, [projects]);
+
   // Sync userPoints with customAssets when data is loaded
   useEffect(() => {
     console.log(111111111);
