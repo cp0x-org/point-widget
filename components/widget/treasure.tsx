@@ -5,24 +5,7 @@ import Image from 'next/image';
 import { Asset, ChainSummary } from '@/types/portfolio';
 import AssetsPie from './assets-pie';
 import { useState, useEffect, useMemo } from 'react';
-
-interface ProtocolPosition {
-  balance: string;
-  chainContract: string;
-  chainKey: string;
-  contract: string;
-  decimal: string;
-  explorerUrl: string;
-  imgSmall: string;
-  imgLarge: string;
-  name: string;
-  openPnl: string;
-  price: string;
-  priceSource: string;
-  symbol: string;
-  totalCostBasis: string;
-  value: string;
-}
+import { useUserPoints } from '@/hooks/useUserPoints';
 
 interface AssetByProtocol {
   name: string;
@@ -42,19 +25,6 @@ interface Project {
   percent: number;
 }
 
-interface Chain {
-  name: string;
-  key: string;
-  chainId: string;
-  imgSmall: string;
-  imgLarge: string;
-  value: string;
-  valuePercentile: string;
-  totalCostBasis: string;
-  totalClosedPnl: string;
-  totalOpenPnl: string;
-}
-
 interface Project {
   id: number;
   name: string;
@@ -71,6 +41,8 @@ export default function Treasure() {
     includeExplorerUrls: true,
     waitForSync: true,
   });
+
+  const { data: userPoints, loading: isLoadingPoints } = useUserPoints();
 
   const [customAssets, setCustomAssets] = useState<{ id: number; name: string; quantity: number; price: number }[]>([]);
   const [projects, setProjects] = useState<Record<string, Project>>({});
@@ -101,6 +73,42 @@ export default function Treasure() {
       console.error('Failed to save custom assets to localStorage', e);
     }
   }, [customAssets]);
+
+  // Sync userPoints with customAssets when data is loaded
+  useEffect(() => {
+    console.log(111111111);
+    if (userPoints && !isLoadingPoints && Object.values(projects).length > 0) {
+      console.log(222222);
+      const newCustomAssets = [...customAssets];
+
+      Object.values(projects).forEach((project) => {
+        // Find matching userPoint by name
+        const matchingUserPoint = userPoints.find((point: any) => point.name === project.name);
+        console.log(matchingUserPoint);
+        console.log(project.name);
+        if (matchingUserPoint) {
+          // Check if this asset is not already in customAssets
+          const existingAsset = newCustomAssets.find((asset) => asset.name === project.name);
+
+          if (!existingAsset) {
+            // Add to customAssets
+            const newAsset = {
+              id: Date.now() + Math.random(), // Ensure unique ID
+              name: project.name,
+              quantity: matchingUserPoint.quantity || 0,
+              price: project.pointPrice || 0,
+            };
+            newCustomAssets.push(newAsset);
+          }
+        }
+      });
+
+      // Update customAssets if we found new matches
+      if (newCustomAssets.length > customAssets.length) {
+        setCustomAssets(newCustomAssets);
+      }
+    }
+  }, [userPoints, isLoadingPoints, projects, customAssets]);
 
   const apiAssets = useMemo(() => {
     if (!data?.assetByProtocols) {
@@ -269,10 +277,10 @@ export default function Treasure() {
                 {Object.values(projects).map((pr) => (
                   <tr key={pr.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium text-gray-800">{pr.name}</td>
-                    <td className="p-2 text-gray-600">${pr.fdv}</td>
-                    <td className="p-2 text-gray-600">${pr.percent}</td>
-                    <td className="p-2 text-gray-600">${pr.totalPoints}</td>
-                    <td className="p-2 text-gray-600">${pr.pointPrice}</td>
+                    <td className="p-2 text-gray-600">{pr.fdv} $</td>
+                    <td className="p-2 text-gray-600">{pr.percent} %</td>
+                    <td className="p-2 text-gray-600">{pr.totalPoints}</td>
+                    <td className="p-2 text-gray-600">{pr.pointPrice} $</td>
                     <td className="p-2 text-right">
                       <button
                         onClick={() => handleDeleteProject(pr.id)}
@@ -300,7 +308,6 @@ export default function Treasure() {
                   <th className="p-2 font-semibold text-gray-600">Quantity</th>
                   <th className="p-2 font-semibold text-gray-600">Price</th>
                   <th className="p-2 font-semibold text-gray-600">Total Value</th>
-                  <th className="p-2 font-semibold text-gray-600 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -310,14 +317,6 @@ export default function Treasure() {
                     <td className="p-2 text-gray-600">{asset.quantity}</td>
                     <td className="p-2 text-gray-600">${asset.price.toFixed(2)}</td>
                     <td className="p-2 text-gray-600">${(asset.quantity * asset.price).toFixed(2)}</td>
-                    <td className="p-2 text-right">
-                      <button
-                        onClick={() => handleDeleteAsset(asset.id)}
-                        className="text-red-500 hover:text-red-700 font-semibold"
-                      >
-                        Delete
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
