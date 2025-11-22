@@ -50,6 +50,18 @@ export default function Treasure() {
   const [projectFDV, setProjectFDV] = useState('');
   const [tokenPercent, setTokenPercent] = useState('');
   const [totalPoints, setTotalPoints] = useState('');
+  const [editingProject, setEditingProject] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<{
+    name: string;
+    fdv: string;
+    percent: string;
+    totalPoints: string;
+  }>({
+    name: '',
+    fdv: '',
+    percent: '',
+    totalPoints: '',
+  });
 
   useEffect(() => {
     try {
@@ -84,9 +96,7 @@ export default function Treasure() {
 
   // Sync userPoints with customAssets when data is loaded
   useEffect(() => {
-    console.log(111111111);
     if (userPoints && !isLoadingPoints && Object.values(projects).length > 0) {
-      console.log(222222);
       const newCustomAssets = [...customAssets];
 
       Object.values(projects).forEach((project) => {
@@ -185,6 +195,84 @@ export default function Treasure() {
       }
 
       return updated;
+    });
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project.id);
+    setEditValues({
+      name: project.name,
+      fdv: project.fdv.toString(),
+      percent: project.percent.toString(),
+      totalPoints: project.totalPoints.toString(),
+    });
+  };
+
+  const handleSaveProject = (id: number) => {
+    const fdv = parseFloat(editValues.fdv);
+    const percent = parseFloat(editValues.percent);
+    const totalPoints = parseFloat(editValues.totalPoints);
+
+    if (!editValues.name.trim() || isNaN(fdv) || isNaN(percent) || isNaN(totalPoints)) {
+      return;
+    }
+
+    const pointPrice = fdv / totalPoints;
+
+    setProjects((prev) => {
+      const updated = { ...prev };
+
+      // Find the current project to update
+      for (const key in updated) {
+        if (updated[key].id === id) {
+          const oldName = updated[key].name;
+
+          // Delete the old key if name changed
+          if (oldName !== editValues.name) {
+            delete updated[key];
+          }
+
+          // Add the updated project
+          updated[editValues.name] = {
+            id,
+            name: editValues.name,
+            fdv,
+            percent,
+            totalPoints,
+            pointPrice,
+          };
+
+          // Update custom assets if name changed
+          if (oldName !== editValues.name) {
+            setCustomAssets((prevAssets) =>
+              prevAssets.map((asset) =>
+                asset.name === oldName ? { ...asset, name: editValues.name, price: pointPrice } : asset
+              )
+            );
+          } else {
+            // Update price if other values changed
+            setCustomAssets((prevAssets) =>
+              prevAssets.map((asset) => (asset.name === editValues.name ? { ...asset, price: pointPrice } : asset))
+            );
+          }
+
+          break;
+        }
+      }
+
+      return updated;
+    });
+
+    setEditingProject(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProject(null);
+    setEditValues({
+      name: '',
+      fdv: '',
+      percent: '',
+      totalPoints: '',
     });
   };
 
@@ -289,18 +377,87 @@ export default function Treasure() {
               <tbody>
                 {Object.values(projects).map((pr) => (
                   <tr key={pr.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-medium text-gray-800">{pr.name}</td>
-                    <td className="p-2 text-gray-600">{pr.fdv} $</td>
-                    <td className="p-2 text-gray-600">{pr.percent} %</td>
-                    <td className="p-2 text-gray-600">{pr.totalPoints}</td>
-                    <td className="p-2 text-gray-600">{pr.pointPrice} $</td>
+                    <td className="p-2">
+                      {editingProject === pr.id ? (
+                        <input
+                          type="text"
+                          value={editValues.name}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, name: e.target.value }))}
+                          className="w-full p-1 border border-gray-300 rounded text-sm"
+                        />
+                      ) : (
+                        <span className="font-medium text-gray-800">{pr.name}</span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {editingProject === pr.id ? (
+                        <input
+                          type="number"
+                          value={editValues.fdv}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, fdv: e.target.value }))}
+                          className="w-full p-1 border border-gray-300 rounded text-sm"
+                        />
+                      ) : (
+                        <span className="text-gray-600">{pr.fdv} $</span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {editingProject === pr.id ? (
+                        <input
+                          type="number"
+                          value={editValues.percent}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, percent: e.target.value }))}
+                          className="w-full p-1 border border-gray-300 rounded text-sm"
+                        />
+                      ) : (
+                        <span className="text-gray-600">{pr.percent} %</span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {editingProject === pr.id ? (
+                        <input
+                          type="number"
+                          value={editValues.totalPoints}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, totalPoints: e.target.value }))}
+                          className="w-full p-1 border border-gray-300 rounded text-sm"
+                        />
+                      ) : (
+                        <span className="text-gray-600">{pr.totalPoints}</span>
+                      )}
+                    </td>
+                    <td className="p-2 text-gray-600">{pr.pointPrice.toFixed(6)} $</td>
                     <td className="p-2 text-right">
-                      <button
-                        onClick={() => handleDeleteProject(pr.id)}
-                        className="text-red-500 hover:text-red-700 font-semibold"
-                      >
-                        Delete
-                      </button>
+                      {editingProject === pr.id ? (
+                        <div className="space-x-2">
+                          <button
+                            onClick={() => handleSaveProject(pr.id)}
+                            className="text-green-600 hover:text-green-800 font-semibold text-sm"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-gray-500 hover:text-gray-700 font-semibold text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-x-2">
+                          <button
+                            onClick={() => handleEditProject(pr)}
+                            className="text-blue-500 hover:text-blue-700 font-semibold text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(pr.id)}
+                            className="text-red-500 hover:text-red-700 font-semibold text-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
