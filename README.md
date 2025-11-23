@@ -34,13 +34,7 @@ Treasure Widget is an innovative portfolio tracker that goes beyond traditional 
 - Local storage persistence for custom configurations
 - Batch operations for managing multiple projects
 
-## 🏃‍♂️ Usage
-
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn package manager
-
-### Tech Stack
+## 🏃‍♂️ Tech Stack
 
 - Next.js 15 with App Router
 - React 19
@@ -78,3 +72,29 @@ OCTAV_API_KEY=your_octav_api_key_here
 EXTENDED_API_KEY="your_extended_api_key_here"
 NEXT_PUBLIC_WALLET_ADDRESS="your_wallet_address_here"
 ```
+
+## 📘 Usage Guide
+1) Configure Your Projects
+    For the widget to work correctly, you need to set the following project parameters:
+    * **Project Name** — a unique name of the project. It must match the asset name returned by the points source API.
+    * **FDV (Fully Diluted Valuation)** — the expected fully diluted valuation of the token.
+    * **Token Percentage** — the percentage of tokens being distributed.
+    * **Total Points** — the total number of points available for this project.
+
+2) How Data Loading Works
+
+    * If a project is not configured, only the raw data from the source will be used (e.g., the number of tokens or points).
+    The source can be anything — you can add or adjust it to pull data from any provider.
+
+    * If a project is configured and its name matches the token name from the source:
+      * The token price and the estimated total value of the points are automatically fetched.
+      * The system calculates the approximate value of the project based on the provided parameters.
+
+All of this is visualized in a chart, showing the total value across your configured projects.
+
+## Examples
+
+![One Missing Project Configuration](./docs/extended_only.png)
+
+![All Configurations Set](./docs/both_points.png)
+
