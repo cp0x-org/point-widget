@@ -94,7 +94,7 @@ All of this is visualized in a chart, showing the total value across your config
 
 ## Examples
 
-![One Missing Project Configuration](./docs/extended_only.png)
+![One Missing Project Configuration](./docs/extended_only.jpg)
 
-![All Configurations Set](./docs/both_points.png)
+![All Configurations Set](./docs/both_points.jpg)
 
