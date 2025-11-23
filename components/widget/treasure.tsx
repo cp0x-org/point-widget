@@ -56,7 +56,7 @@ interface Project {
 
 export default function Treasure() {
   const { data, isLoading, error } = useGetPortfolio({
-    address: '0x4c82cfF7398f3D43b36e41B10fF6F42b14DD9385',
+    address: process.env.NEXT_PUBLIC_WALLET_ADDRESS as string,
     includeImages: true,
     includeExplorerUrls: true,
     waitForSync: true,
