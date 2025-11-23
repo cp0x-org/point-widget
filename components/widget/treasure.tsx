@@ -15,6 +15,18 @@ const formatNumber = (value: number, decimals: number = 2): string => {
   }).format(value);
 };
 
+// Function to format input values for display on blur
+const formatInputValue = (value: string): string => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  return isNaN(num) ? value : num.toLocaleString('en-US');
+};
+
+// Function to parse formatted input back to plain number string
+const parseInputValue = (value: string): string => {
+  return value.replace(/,/g, '');
+};
+
 interface AssetByProtocol {
   name: string;
   key: string;
@@ -71,6 +83,22 @@ export default function Treasure() {
     fdv: '',
     percent: '',
     totalPoints: '',
+  });
+
+  const [inputFocused, setInputFocused] = useState<{
+    projectFDV: boolean;
+    tokenPercent: boolean;
+    totalPoints: boolean;
+    editFDV: boolean;
+    editPercent: boolean;
+    editTotalPoints: boolean;
+  }>({
+    projectFDV: false,
+    tokenPercent: false,
+    totalPoints: false,
+    editFDV: false,
+    editPercent: false,
+    editTotalPoints: false,
   });
 
   useEffect(() => {
@@ -253,7 +281,7 @@ export default function Treasure() {
       return;
     }
 
-    const pointPrice = fdv / totalPoints;
+    const pointPrice = (fdv * (percent / 100)) / totalPoints;
 
     setProjects((prev) => {
       const updated = { ...prev };
@@ -356,12 +384,14 @@ export default function Treasure() {
               Project Apr. FDV ($)
             </label>
             <input
-              type="number"
+              type="text"
               id="projectFDV"
-              value={projectFDV}
-              onChange={(e) => setProjectFDV(e.target.value)}
+              value={inputFocused.projectFDV ? projectFDV : formatInputValue(projectFDV)}
+              onChange={(e) => setProjectFDV(parseInputValue(e.target.value))}
+              onFocus={() => setInputFocused((prev) => ({ ...prev, projectFDV: true }))}
+              onBlur={() => setInputFocused((prev) => ({ ...prev, projectFDV: false }))}
               className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. 10"
+              placeholder="e.g. 10000000"
             />
           </div>
           <div className="space-y-1">
@@ -369,10 +399,12 @@ export default function Treasure() {
               Project Token Percent
             </label>
             <input
-              type="number"
+              type="text"
               id="tokenPercent"
-              value={tokenPercent}
-              onChange={(e) => setTokenPercent(e.target.value)}
+              value={inputFocused.tokenPercent ? tokenPercent : formatInputValue(tokenPercent)}
+              onChange={(e) => setTokenPercent(parseInputValue(e.target.value))}
+              onFocus={() => setInputFocused((prev) => ({ ...prev, tokenPercent: true }))}
+              onBlur={() => setInputFocused((prev) => ({ ...prev, tokenPercent: false }))}
               className="w-full p-2 border border-gray-300 rounded-md"
               placeholder="e.g. 50.25"
             />
@@ -382,12 +414,14 @@ export default function Treasure() {
               Total Points
             </label>
             <input
-              type="number"
+              type="text"
               id="totalPoints"
-              value={totalPoints}
-              onChange={(e) => setTotalPoints(e.target.value)}
+              value={inputFocused.totalPoints ? totalPoints : formatInputValue(totalPoints)}
+              onChange={(e) => setTotalPoints(parseInputValue(e.target.value))}
+              onFocus={() => setInputFocused((prev) => ({ ...prev, totalPoints: true }))}
+              onBlur={() => setInputFocused((prev) => ({ ...prev, totalPoints: false }))}
               className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. 50.25"
+              placeholder="e.g. 1000000"
             />
           </div>
           <button
@@ -432,9 +466,11 @@ export default function Treasure() {
                     <td className="p-2">
                       {editingProject === pr.id ? (
                         <input
-                          type="number"
-                          value={editValues.fdv}
-                          onChange={(e) => setEditValues((prev) => ({ ...prev, fdv: e.target.value }))}
+                          type="text"
+                          value={inputFocused.editFDV ? editValues.fdv : formatInputValue(editValues.fdv)}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, fdv: parseInputValue(e.target.value) }))}
+                          onFocus={() => setInputFocused((prev) => ({ ...prev, editFDV: true }))}
+                          onBlur={() => setInputFocused((prev) => ({ ...prev, editFDV: false }))}
                           className="w-full p-1 border border-gray-300 rounded text-sm"
                         />
                       ) : (
@@ -444,9 +480,13 @@ export default function Treasure() {
                     <td className="p-2">
                       {editingProject === pr.id ? (
                         <input
-                          type="number"
-                          value={editValues.percent}
-                          onChange={(e) => setEditValues((prev) => ({ ...prev, percent: e.target.value }))}
+                          type="text"
+                          value={inputFocused.editPercent ? editValues.percent : formatInputValue(editValues.percent)}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({ ...prev, percent: parseInputValue(e.target.value) }))
+                          }
+                          onFocus={() => setInputFocused((prev) => ({ ...prev, editPercent: true }))}
+                          onBlur={() => setInputFocused((prev) => ({ ...prev, editPercent: false }))}
                           className="w-full p-1 border border-gray-300 rounded text-sm"
                         />
                       ) : (
@@ -456,9 +496,17 @@ export default function Treasure() {
                     <td className="p-2">
                       {editingProject === pr.id ? (
                         <input
-                          type="number"
-                          value={editValues.totalPoints}
-                          onChange={(e) => setEditValues((prev) => ({ ...prev, totalPoints: e.target.value }))}
+                          type="text"
+                          value={
+                            inputFocused.editTotalPoints
+                              ? editValues.totalPoints
+                              : formatInputValue(editValues.totalPoints)
+                          }
+                          onChange={(e) =>
+                            setEditValues((prev) => ({ ...prev, totalPoints: parseInputValue(e.target.value) }))
+                          }
+                          onFocus={() => setInputFocused((prev) => ({ ...prev, editTotalPoints: true }))}
+                          onBlur={() => setInputFocused((prev) => ({ ...prev, editTotalPoints: false }))}
                           className="w-full p-1 border border-gray-300 rounded text-sm"
                         />
                       ) : (
