@@ -44,7 +44,7 @@ export default function Treasure() {
 
   const { data: userPoints, loading: isLoadingPoints } = useUserPoints();
 
-  const [customAssets, setCustomAssets] = useState<{ id: number; name: string; quantity: number; price: number }[]>([]);
+  const [customAssets, setCustomAssets] = useState<{ id: number; name: string; quantity: number; price: number; hasProject: boolean }[]>([]);
   const [projects, setProjects] = useState<Record<string, Project>>({});
   const [projectName, setProjectName] = useState('');
   const [projectFDV, setProjectFDV] = useState('');
@@ -96,36 +96,52 @@ export default function Treasure() {
 
   // Sync userPoints with customAssets when data is loaded
   useEffect(() => {
-    if (userPoints && !isLoadingPoints && Object.values(projects).length > 0) {
+    if (userPoints && !isLoadingPoints) {
       const newCustomAssets = [...customAssets];
 
-      Object.values(projects).forEach((project) => {
-        // Find matching userPoint by name
-        const matchingUserPoint = userPoints.find((point: any) => point.name.trim() === project.name.trim());
+      userPoints.forEach((userPoint: any) => {
+        // Check if this asset is not already in customAssets
+        const existingAsset = newCustomAssets.find((asset) => asset.name === userPoint.name);
 
-        if (matchingUserPoint) {
-          // Check if this asset is not already in customAssets
-          const existingAsset = newCustomAssets.find((asset) => asset.name === project.name);
+        if (!existingAsset) {
+          // Find matching project by name
+          const matchingProject = Object.values(projects).find((project) => project.name.trim() === userPoint.name.trim());
 
-          if (!existingAsset) {
-            // Add to customAssets
-            const newAsset = {
-              id: Date.now() + Math.random(), // Ensure unique ID
-              name: project.name,
-              quantity: matchingUserPoint.quantity || 0,
-              price: project.pointPrice || 0,
+          // Add to customAssets
+          const newAsset = {
+            id: Date.now() + Math.random(), // Ensure unique ID
+            name: userPoint.name,
+            quantity: userPoint.quantity || 0,
+            price: matchingProject ? matchingProject.pointPrice : 0,
+            hasProject: !!matchingProject,
+          };
+          newCustomAssets.push(newAsset);
+        } else {
+          // Update existing asset with project info if project was added
+          const matchingProject = Object.values(projects).find((project) => project.name.trim() === userPoint.name.trim());
+          const existingAssetIndex = newCustomAssets.findIndex((asset) => asset.name === userPoint.name);
+
+          if (existingAssetIndex !== -1) {
+            newCustomAssets[existingAssetIndex] = {
+              ...newCustomAssets[existingAssetIndex],
+              price: matchingProject ? matchingProject.pointPrice : 0,
+              hasProject: !!matchingProject,
             };
-            newCustomAssets.push(newAsset);
           }
         }
       });
 
-      // Update customAssets if we found new matches
-      if (newCustomAssets.length > customAssets.length) {
+      // Update customAssets if we found new matches or updates
+      if (newCustomAssets.length !== customAssets.length || 
+          newCustomAssets.some((asset, index) => 
+            !customAssets[index] || 
+            asset.hasProject !== customAssets[index]?.hasProject ||
+            asset.price !== customAssets[index]?.price
+          )) {
         setCustomAssets(newCustomAssets);
       }
     }
-  }, [userPoints, isLoadingPoints, projects, customAssets]);
+  }, [userPoints, isLoadingPoints, projects]);
 
   const apiAssets = useMemo(() => {
     if (!data?.assetByProtocols) {
@@ -162,6 +178,16 @@ export default function Treasure() {
           ...prev,
           [newProject.name]: newProject,
         }));
+
+        // Update existing custom assets that match this project name
+        setCustomAssets((prevAssets) =>
+          prevAssets.map((asset) =>
+            asset.name === projectName
+              ? { ...asset, price: price, hasProject: true }
+              : asset
+          )
+        );
+
         setProjectName('');
         setProjectFDV('');
         setTokenPercent('');
@@ -184,9 +210,15 @@ export default function Treasure() {
         }
       }
 
-      // Remove related custom assets by project name
+      // Update related custom assets to not have project
       if (projectName) {
-        setCustomAssets((prevAssets) => prevAssets.filter((asset) => asset.name !== projectName));
+        setCustomAssets((prevAssets) =>
+          prevAssets.map((asset) =>
+            asset.name === projectName
+              ? { ...asset, price: 0, hasProject: false }
+              : asset
+          )
+        );
       }
 
       return updated;
@@ -241,13 +273,13 @@ export default function Treasure() {
           if (oldName !== editValues.name) {
             setCustomAssets((prevAssets) =>
               prevAssets.map((asset) =>
-                asset.name === oldName ? { ...asset, name: editValues.name, price: pointPrice } : asset
+                asset.name === oldName ? { ...asset, name: editValues.name, price: pointPrice, hasProject: true } : asset
               )
             );
           } else {
             // Update price if other values changed
             setCustomAssets((prevAssets) =>
-              prevAssets.map((asset) => (asset.name === editValues.name ? { ...asset, price: pointPrice } : asset))
+              prevAssets.map((asset) => (asset.name === editValues.name ? { ...asset, price: pointPrice, hasProject: true } : asset))
             );
           }
 
@@ -462,33 +494,43 @@ export default function Treasure() {
         </div>
       )}
 
-      {customAssets.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-gray-800">My Custom Assets</h3>
-          <div className="bg-white border border-gray-200 rounded-lg p-4 overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-2 font-semibold text-gray-600">Name</th>
-                  <th className="p-2 font-semibold text-gray-600">Quantity</th>
-                  <th className="p-2 font-semibold text-gray-600">Price</th>
-                  <th className="p-2 font-semibold text-gray-600">Total Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customAssets.map((asset) => (
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-gray-800">My Custom Assets</h3>
+        <div className="bg-white border border-gray-200 rounded-lg p-4 overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b">
+                <th className="p-2 font-semibold text-gray-600">Name</th>
+                <th className="p-2 font-semibold text-gray-600">Quantity</th>
+                <th className="p-2 font-semibold text-gray-600">Price</th>
+                <th className="p-2 font-semibold text-gray-600">Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customAssets.length > 0 ? (
+                customAssets.map((asset) => (
                   <tr key={asset.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium text-gray-800">{asset.name}</td>
                     <td className="p-2 text-gray-600">{asset.quantity}</td>
-                    <td className="p-2 text-gray-600">${asset.price.toFixed(2)}</td>
-                    <td className="p-2 text-gray-600">${(asset.quantity * asset.price).toFixed(2)}</td>
+                    <td className="p-2 text-gray-600">
+                      {asset.hasProject ? `$${asset.price.toFixed(6)}` : '-'}
+                    </td>
+                    <td className="p-2 text-gray-600">
+                      {asset.hasProject ? `$${(asset.quantity * asset.price).toFixed(2)}` : '-'}
+                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">
+                    No custom assets yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }
