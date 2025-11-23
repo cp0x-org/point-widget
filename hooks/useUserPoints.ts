@@ -13,7 +13,7 @@ export function useUserPoints() {
         if (response.data.status === 'OK') {
           const totalPoints = parseInt(response.data.data.totalPoints);
           setData([
-            { name: 'backpack points', quantity: 1500 },
+            { name: 'backpack points', quantity: 32000 },
             { name: 'extended points', quantity: totalPoints },
           ]);
         }
@@ -21,8 +21,8 @@ export function useUserPoints() {
         console.error('Error fetching user points:', error);
         // Fallback to mock data on error
         setData([
-          { name: 'backpack points', quantity: 1500 },
-          { name: 'extended points', quantity: 800 },
+          { name: 'backpack points', quantity: 32000 },
+          { name: 'extended points', quantity: 8000 },
         ]);
       } finally {
         setLoading(false);
