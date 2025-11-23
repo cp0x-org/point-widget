@@ -7,6 +7,14 @@ import AssetsPie from './assets-pie';
 import { useState, useEffect, useMemo } from 'react';
 import { useUserPoints } from '@/hooks/useUserPoints';
 
+// Utility function to format numbers with commas and proper decimal points
+const formatNumber = (value: number, decimals: number = 2): string => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+};
+
 interface AssetByProtocol {
   name: string;
   key: string;
@@ -44,7 +52,9 @@ export default function Treasure() {
 
   const { data: userPoints, loading: isLoadingPoints } = useUserPoints();
 
-  const [customAssets, setCustomAssets] = useState<{ id: number; name: string; quantity: number; price: number; hasProject: boolean }[]>([]);
+  const [customAssets, setCustomAssets] = useState<
+    { id: number; name: string; quantity: number; price: number; hasProject: boolean }[]
+  >([]);
   const [projects, setProjects] = useState<Record<string, Project>>({});
   const [projectName, setProjectName] = useState('');
   const [projectFDV, setProjectFDV] = useState('');
@@ -105,7 +115,9 @@ export default function Treasure() {
 
         if (!existingAsset) {
           // Find matching project by name
-          const matchingProject = Object.values(projects).find((project) => project.name.trim() === userPoint.name.trim());
+          const matchingProject = Object.values(projects).find(
+            (project) => project.name.trim() === userPoint.name.trim()
+          );
 
           // Add to customAssets
           const newAsset = {
@@ -118,7 +130,9 @@ export default function Treasure() {
           newCustomAssets.push(newAsset);
         } else {
           // Update existing asset with project info if project was added
-          const matchingProject = Object.values(projects).find((project) => project.name.trim() === userPoint.name.trim());
+          const matchingProject = Object.values(projects).find(
+            (project) => project.name.trim() === userPoint.name.trim()
+          );
           const existingAssetIndex = newCustomAssets.findIndex((asset) => asset.name === userPoint.name);
 
           if (existingAssetIndex !== -1) {
@@ -132,12 +146,15 @@ export default function Treasure() {
       });
 
       // Update customAssets if we found new matches or updates
-      if (newCustomAssets.length !== customAssets.length || 
-          newCustomAssets.some((asset, index) => 
-            !customAssets[index] || 
+      if (
+        newCustomAssets.length !== customAssets.length ||
+        newCustomAssets.some(
+          (asset, index) =>
+            !customAssets[index] ||
             asset.hasProject !== customAssets[index]?.hasProject ||
             asset.price !== customAssets[index]?.price
-          )) {
+        )
+      ) {
         setCustomAssets(newCustomAssets);
       }
     }
@@ -181,11 +198,7 @@ export default function Treasure() {
 
         // Update existing custom assets that match this project name
         setCustomAssets((prevAssets) =>
-          prevAssets.map((asset) =>
-            asset.name === projectName
-              ? { ...asset, price: price, hasProject: true }
-              : asset
-          )
+          prevAssets.map((asset) => (asset.name === projectName ? { ...asset, price: price, hasProject: true } : asset))
         );
 
         setProjectName('');
@@ -213,11 +226,7 @@ export default function Treasure() {
       // Update related custom assets to not have project
       if (projectName) {
         setCustomAssets((prevAssets) =>
-          prevAssets.map((asset) =>
-            asset.name === projectName
-              ? { ...asset, price: 0, hasProject: false }
-              : asset
-          )
+          prevAssets.map((asset) => (asset.name === projectName ? { ...asset, price: 0, hasProject: false } : asset))
         );
       }
 
@@ -273,13 +282,17 @@ export default function Treasure() {
           if (oldName !== editValues.name) {
             setCustomAssets((prevAssets) =>
               prevAssets.map((asset) =>
-                asset.name === oldName ? { ...asset, name: editValues.name, price: pointPrice, hasProject: true } : asset
+                asset.name === oldName
+                  ? { ...asset, name: editValues.name, price: pointPrice, hasProject: true }
+                  : asset
               )
             );
           } else {
             // Update price if other values changed
             setCustomAssets((prevAssets) =>
-              prevAssets.map((asset) => (asset.name === editValues.name ? { ...asset, price: pointPrice, hasProject: true } : asset))
+              prevAssets.map((asset) =>
+                asset.name === editValues.name ? { ...asset, price: pointPrice, hasProject: true } : asset
+              )
             );
           }
 
@@ -425,7 +438,7 @@ export default function Treasure() {
                           className="w-full p-1 border border-gray-300 rounded text-sm"
                         />
                       ) : (
-                        <span className="text-gray-600">{pr.fdv} $</span>
+                        <span className="text-gray-600">${formatNumber(pr.fdv)}</span>
                       )}
                     </td>
                     <td className="p-2">
@@ -449,10 +462,10 @@ export default function Treasure() {
                           className="w-full p-1 border border-gray-300 rounded text-sm"
                         />
                       ) : (
-                        <span className="text-gray-600">{pr.totalPoints}</span>
+                        <span className="text-gray-600">{formatNumber(pr.totalPoints, 0)}</span>
                       )}
                     </td>
-                    <td className="p-2 text-gray-600">{pr.pointPrice.toFixed(6)} $</td>
+                    <td className="p-2 text-gray-600">${formatNumber(pr.pointPrice, 6)}</td>
                     <td className="p-2 text-right">
                       {editingProject === pr.id ? (
                         <div className="space-x-2">
@@ -511,12 +524,10 @@ export default function Treasure() {
                 customAssets.map((asset) => (
                   <tr key={asset.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium text-gray-800">{asset.name}</td>
-                    <td className="p-2 text-gray-600">{asset.quantity}</td>
+                    <td className="p-2 text-gray-600">{formatNumber(asset.quantity)}</td>
+                    <td className="p-2 text-gray-600">{asset.hasProject ? `$${formatNumber(asset.price, 6)}` : '-'}</td>
                     <td className="p-2 text-gray-600">
-                      {asset.hasProject ? `$${asset.price.toFixed(6)}` : '-'}
-                    </td>
-                    <td className="p-2 text-gray-600">
-                      {asset.hasProject ? `$${(asset.quantity * asset.price).toFixed(2)}` : '-'}
+                      {asset.hasProject ? `$${formatNumber(asset.quantity * asset.price)}` : '-'}
                     </td>
                   </tr>
                 ))
