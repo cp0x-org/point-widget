@@ -1,10 +1,10 @@
-# 🏴‍☠️ Treasure Widget
+[# 🏴‍☠️ Point Widget
 
 A comprehensive crypto portfolio management dashboard, designed to help users track and value their digital assets across multiple protocols and early-stage projects.
 
 ## 🌟 What It Does
 
-Treasure Widget is an innovative portfolio tracker that goes beyond traditional crypto portfolio management by allowing users to:
+Point Widget is an innovative portfolio tracker that goes beyond traditional crypto portfolio management by allowing users to:
 
 - **Track Multi-Protocol Assets**: Automatically fetch and display asset holdings across different DeFi protocols
 - **Manage Project Points & Tokens**: Add and value early-stage project points/tokens that aren't yet listed on exchanges
@@ -98,3 +98,4 @@ All of this is visualized in a chart, showing the total value across your config
 
 ![All Configurations Set](./docs/both_points.jpg)
 
+]()
